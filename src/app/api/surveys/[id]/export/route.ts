@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { requireAdmin } from '@/lib/auth';
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await requireAdmin(request);
+  if (denied) return denied;
+
+  const { id } = await params;
   const survey = await prisma.survey.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       questions: {
         orderBy: { sortOrder: 'asc' },
@@ -14,7 +19,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
   if (!survey) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const totalResponses = await prisma.response.count({ where: { surveyId: params.id } });
+  const totalResponses = await prisma.response.count({ where: { surveyId: id } });
   const scale = totalResponses > 0 ? 100 / totalResponses : 1;
 
   const gameFile = {

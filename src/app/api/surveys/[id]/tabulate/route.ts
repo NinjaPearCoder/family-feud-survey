@@ -1,35 +1,25 @@
 import { NextResponse } from 'next/server';
+import { requireAdmin } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { tabulateAnswers } from '@/lib/ai';
+import { getSurveyReviewStatus, reviewSurvey } from '@/lib/review';
 
-export async function POST(_req: Request, { params }: { params: { id: string } }) {
-  const survey = await prisma.survey.findUnique({
-    where: { id: params.id },
-    include: {
-      questions: {
-        orderBy: { sortOrder: 'asc' },
-        include: { answers: { select: { text: true } } },
-      },
-    },
-  });
+export const runtime = 'nodejs';
+export const maxDuration = 330;
 
-  if (!survey) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-
-  for (const question of survey.questions) {
-    if (!question.answers.length) continue;
-
-    const tabulated = await tabulateAnswers(question.text, question.answers);
-
-    await prisma.tabulation.deleteMany({ where: { questionId: question.id } });
-    await prisma.tabulation.createMany({
-      data: tabulated.map(t => ({
-        questionId: question.id,
-        answerText: t.answerText,
-        count: t.count,
-        qualityScore: t.qualityScore,
-      })),
-    });
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await requireAdmin(request);
+  if (denied) return denied;
+  const { id } = await params;
+  const force = new URL(request.url).searchParams.get('force') === 'true';
+  try {
+    const run = await reviewSurvey(id, { force });
+    const status = run.status === 'disabled' ? 503 : run.status === 'not_found' ? 404
+      : ['busy', 'ineligible', 'not_due'].includes(run.status) ? 409 : 200;
+    const results = status === 200 ? await prisma.question.findMany({ where: { surveyId: id },
+      orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }], select: { id: true, tabulations: { orderBy: [{ count: 'desc' }, { answerText: 'asc' }] } } }) : undefined;
+    return NextResponse.json({ ok: status === 200 && run.failed === 0 && run.stale === 0, run, results,
+      ...(status === 200 ? { review: await getSurveyReviewStatus(id) } : { error: `Review ${run.status}.` }) }, { status });
+  } catch {
+    return NextResponse.json({ error: 'Review could not be completed.' }, { status: 500 });
   }
-
-  return NextResponse.json({ ok: true });
 }

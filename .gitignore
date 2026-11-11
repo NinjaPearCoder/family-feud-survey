@@ -2,6 +2,13 @@
 node_modules/
 .env.local
 .env
+.env.*
+!.env.example
+!.env.*.example
+next-env.d.ts
+*.tsbuildinfo
+*.db
+*.db-*
 prisma/dev.db
 prisma/dev.db-shm
 prisma/dev.db-wal

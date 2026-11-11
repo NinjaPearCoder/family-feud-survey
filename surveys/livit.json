@@ -1,0 +1,87 @@
+[
+  {
+    "title": "LivIT and Workplace",
+    "audience": "LivIT",
+    "source": "LivIT",
+    "questions": [
+      "Name something people contact LivIT to fix.",
+      "Name a device LivIT employees use every day.",
+      "Name a common workplace password mistake.",
+      "Name something found in an IT support ticket.",
+      "Name a reason someone might need a new computer.",
+      "Name something people forget to bring to a meeting.",
+      "Name a common video-conference problem.",
+      "Name something that makes a workday more productive.",
+      "Name a popular office snack.",
+      "Name something people do when technology is not working."
+    ]
+  },
+  {
+    "title": "Holiday Party",
+    "audience": "LivIT",
+    "source": "LivIT",
+    "questions": [
+      "Name a food you hope to see at a holiday party.",
+      "Name a popular holiday beverage.",
+      "Name a holiday song everyone knows.",
+      "Name something people wear to a holiday party.",
+      "Name a common office gift.",
+      "Name a holiday movie people watch every year.",
+      "Name something people do at a holiday party.",
+      "Name a holiday dessert.",
+      "Name something you might win at a holiday party.",
+      "Name something people do before leaving the party."
+    ]
+  },
+  {
+    "title": "Technology",
+    "audience": "LivIT",
+    "source": "LivIT",
+    "questions": [
+      "Name a device people are likely to lose.",
+      "Name an app people use every day.",
+      "Name something that needs charging.",
+      "Name a reason Wi-Fi might seem slow.",
+      "Name a popular computer shortcut.",
+      "Name something people store in the cloud.",
+      "Name a piece of technology people had before smartphones.",
+      "Name something people plug into a computer.",
+      "Name a common printer complaint.",
+      "Name something people ask IT to reset."
+    ]
+  },
+  {
+    "title": "Just for Fun",
+    "audience": "LivIT",
+    "source": "LivIT",
+    "questions": [
+      "Name something people do first thing in the morning.",
+      "Name something people keep on their desk.",
+      "Name a food people eat while working.",
+      "Name something people bring on vacation.",
+      "Name a reason someone might be late.",
+      "Name a popular lunch choice.",
+      "Name something people do when they are bored.",
+      "Name something found in a junk drawer.",
+      "Name a word people use in meetings.",
+      "Name something everyone has too many of."
+    ]
+  },
+  {
+    "title": "Easy \u201cSurvey Says\u201d Questions",
+    "audience": "LivIT",
+    "source": "LivIT",
+    "questions": [
+      "What is the best office perk?",
+      "What is the most useful invention?",
+      "What is the hardest technology to live without?",
+      "What is the best holiday tradition?",
+      "What is the first website people visit at work?",
+      "What is the most annoying computer problem?",
+      "What is the best way to celebrate a team success?",
+      "What is something people would bring to a deserted island?",
+      "What is the most popular takeout food?",
+      "What is one word that describes LivIT?"
+    ]
+  }
+]

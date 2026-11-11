@@ -1,28 +1,39 @@
 import { NextResponse } from 'next/server';
-import { SignJWT } from 'jose';
-
-const SECRET = new TextEncoder().encode(
-  process.env.SESSION_SECRET ?? 'dev-secret-change-me'
-);
+import { createHash, timingSafeEqual } from 'node:crypto';
+import { getAuthConfig, signAdminSession, SESSION_COOKIE, SESSION_MAX_AGE } from '@/lib/auth';
 
 export async function POST(request: Request) {
-  const { password } = await request.json() as { password: string };
-
-  if (password !== (process.env.ADMIN_PASSWORD ?? 'changeme')) {
-    return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
+  const config = getAuthConfig();
+  if (!config) {
+    return NextResponse.json({ error: 'Authentication unavailable' }, { status: 503 });
   }
 
-  const token = await new SignJWT({ role: 'admin' })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setExpirationTime('7d')
-    .sign(SECRET);
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (
+    !body || typeof body !== 'object' || Array.isArray(body) ||
+    !('password' in body) || typeof body.password !== 'string' ||
+    !timingSafeEqual(
+      createHash('sha256').update(body.password).digest(),
+      createHash('sha256').update(config.password).digest()
+    )
+  ) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const token = await signAdminSession(config);
 
   const response = NextResponse.json({ ok: true });
-  response.cookies.set('admin-session', token, {
+  response.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7,
+    maxAge: SESSION_MAX_AGE,
     path: '/',
   });
 

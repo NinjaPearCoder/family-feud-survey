@@ -12,12 +12,24 @@ model Survey {
   title       String
   description String?
   source      String?
+  audience    String?
+  status      String    @default("DRAFT")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  lockedAt    DateTime?
+  openedAt    DateTime?
+  closedAt    DateTime?
+  archivedAt  DateTime?
   token       String    @unique @default(cuid())
   questions   Question[]
+  backgroundVersion Int @default(0)
+  backgroundQuestions BackgroundQuestion[]
   responses   Response[]
+  reviewLeaseId       String?
+  reviewLeaseUntil    DateTime?
+  lastReviewAttemptAt DateTime?
+  lastReviewError     String?
+
+  @@index([status])
 }
 
 model Question {
@@ -28,6 +40,8 @@ model Question {
   survey      Survey       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
   answers     Answer[]
   tabulations Tabulation[]
+  review      QuestionReview?
+  reviewAttemptedAt DateTime?
 
   @@index([surveyId])
 }
@@ -36,11 +50,14 @@ model Response {
   id              String   @id @default(cuid())
   surveyId        String
   respondentToken String
+  submissionId    String?
   submittedAt     DateTime @default(now())
   survey          Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
   answers         Answer[]
+  backgroundAnswers BackgroundAnswer[]
 
   @@index([surveyId])
+  @@unique([surveyId, submissionId])
 }
 
 model Answer {
@@ -51,6 +68,33 @@ model Answer {
   response   Response @relation(fields: [responseId], references: [id], onDelete: Cascade)
   question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
+  @@index([questionId])
+  @@unique([responseId, questionId])
+}
+
+model BackgroundQuestion {
+  id          String @id @default(cuid())
+  surveyId    String
+  label       String
+  type        String
+  required    Boolean @default(false)
+  optionsJson String @default("[]")
+  sortOrder   Int
+  survey      Survey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  answers     BackgroundAnswer[]
+
+  @@index([surveyId])
+}
+
+model BackgroundAnswer {
+  id         String @id @default(cuid())
+  responseId String
+  questionId String
+  valuesJson String
+  response   Response @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  question   BackgroundQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([responseId, questionId])
   @@index([questionId])
 }
 
@@ -64,4 +108,27 @@ model Tabulation {
   question     Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   @@index([questionId])
+}
+
+model QuestionReview {
+  questionId        String   @id
+  inputHash         String
+  reviewedAt        DateTime @default(now())
+  responseCount     Int
+  validCount        Int
+  flaggedCount      Int
+  questionScore     Float
+  qualityScore      Float
+  sampleScore       Float
+  distributionScore Float
+  topAnswerShare    Float
+  topEightShare     Float
+  groupCount        Int
+  recommendation    String
+  summary           String
+  issuesJson        String
+  flagsJson         String
+  provider          String
+  model             String
+  question          Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }

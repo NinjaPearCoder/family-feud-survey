@@ -3,18 +3,19 @@
 A Next.js web app for collecting Family Feud survey responses, with AI-powered tabulation.
 
 ## What it does
-- Admins create surveys with questions and metadata
+- Admins create draft surveys with questions, audience, and other metadata, then explicitly open collection
+- Admins can optionally add first-page background questions with radio/checkbox/dropdown/text inputs and per-field Required toggles
 - A QR code is generated linking to the public survey form
 - Respondents scan the QR code and answer questions anonymously
 - Admin monitors response counts per question (targeting 100 per question)
-- AI (Claude) groups similar answers, filters junk, and scores quality
+- Optional AI review groups answers, flags junk without deleting it, and assesses question quality
 - Results export as JSON matching the Family Feud Pi app format
 
 ## Stack
-- **Next.js 14** with App Router, TypeScript, and `output: 'standalone'`
+- **Next.js 16** with App Router, React 19, TypeScript, and `output: 'standalone'`
 - **Prisma** ORM with **SQLite** (file-based, no separate DB server)
 - **Tailwind CSS** for styling
-- **Anthropic SDK** for AI tabulation (`claude-opus-4-5`)
+- **Anthropic SDK** or an approved **OpenAI-compatible API** for configurable AI review
 - **jose** for JWT session management
 - **qrcode** for QR code generation
 
@@ -38,7 +39,7 @@ The local SQLite file lives at `prisma/dev.db` (gitignored).
 ## Key routes
 - `/admin` — survey dashboard (requires auth)
 - `/admin/surveys/new` — create a survey
-- `/admin/surveys/[id]` — edit survey, view QR code, lock/unlock
+- `/admin/surveys/[id]` — edit survey, view QR code, open/close/archive/restore
 - `/admin/surveys/[id]/results` — response counts, AI tabulation, export
 - `/survey/[token]` — public survey form (no auth required)
 - `/login` — admin login
@@ -46,14 +47,19 @@ The local SQLite file lives at `prisma/dev.db` (gitignored).
 ## API routes
 - `GET/POST /api/surveys` — list / create surveys
 - `GET/PUT/DELETE /api/surveys/[id]` — get / update / delete a survey
-- `POST /api/surveys/[id]/lock` — toggle lock state
-- `POST /api/surveys/[id]/tabulate` — run AI tabulation (calls Claude)
+- `POST /api/surveys/[id]/status` — explicitly transition collection status with an expected current state
+- `POST /api/surveys/[id]/tabulate` — review up to five changed questions (`?force=true` to reassess)
+- `GET /api/surveys/[id]/review` — admin review status, assessments, and grouped counts from one snapshot
+- `GET /api/surveys/[id]/background-results` — admin-only background answer summaries and paginated responses, separate from AI/game results
+- `POST /api/reviews/run` — one bounded scheduler batch, protected by a separate scheduler credential
 - `GET /api/surveys/[id]/export` — download Family Feud JSON
-- `GET/POST /api/submit/[token]` — public: get survey form / submit answers
+- `GET/POST /api/submit/[token]` — public: get an open survey form / submit answers with a retry-safe submission ID
 
 ## Auth
 Simple JWT cookie auth. Set `ADMIN_PASSWORD` in `.env.local`.
 Session cookie (`admin-session`) is valid for 7 days.
+Administrative API handlers verify the session independently of `src/proxy.ts`.
+Missing/default credentials fail closed; see `README.md` for local setup and testing.
 
 ## Export format
 Matches the format expected by the Family Feud Pi app:
